@@ -1,0 +1,17 @@
+<template>
+    <lightning-card title="Chart" icon-name="custom:custom14">
+        <div class="slds-grid">
+            <div class="slds-m-around_medium canvas-container">
+                <canvas data-id="chartCanvas" width="400" height="400"></canvas>
+            </div>
+            <div class="legend">
+                <template for:each={legendItems} for:item="item">
+                    <div key={item.label} class="legend-item">
+                        <span class="legend-color"></span>
+                        <span class="legend-text">{item.label} - £{item.value}</span>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </lightning-card>
+</template>

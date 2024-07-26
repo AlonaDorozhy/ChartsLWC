@@ -1,0 +1,61 @@
+.canvas-container {
+    position: relative;
+    text-align: center;
+}
+
+canvas[data-id="chartCanvas"] {
+    display: block;
+}
+
+.legend {
+    flex-wrap: wrap;
+    justify-content: center;
+    font-size: 14px;
+    font-family: Open Sans, serif;
+    color: #5d5d5d;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.legend-color {
+    width: 13px;
+    height: 13px;
+    margin-right: 10px;
+    border-radius: 50%;
+}
+
+.legend-text {
+    font-size: 14px;
+}
+
+.legend-item:hover .legend-text {
+    text-decoration: underline;
+}
+
+.slds-grid {
+    align-items: center;
+}
+
+.underline {
+    text-decoration: underline;
+}
+
+.enlarged-text {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+    .tooltip {
+        position: absolute;
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        padding: 5px;
+        border-radius: 3px;
+        pointer-events: none;
+        font-size: 12px;
+        transform: translate(-50%, -50%);
+    }
