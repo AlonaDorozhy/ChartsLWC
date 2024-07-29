@@ -7,6 +7,13 @@ canvas[data-id="chartCanvas"] {
     display: block;
 }
 
+.legend-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    align-self: stretch;
+}
+
 .legend {
     flex-wrap: wrap;
     justify-content: center;
@@ -14,6 +21,32 @@ canvas[data-id="chartCanvas"] {
     font-family: Open Sans, serif;
     color: #5d5d5d;
 }
+.legend-item :hover {
+    text-decoration: underline;
+    color: var(--vibrant-red);
+
+}
+
+.legend-item:hover .legend-text {
+    color: var(--vibrant-red);
+    text-decoration: underline;
+}
+
+.legend {
+    flex-wrap: wrap;
+    justify-content: center;
+    /* font-size: 14px; */
+    /* font-family: 'Open Sans'; */
+    color: #595959;
+}
+
+.legend-item {
+    display: block;
+    width: fit-content;
+    align-items: center;
+    cursor: pointer;
+}
+
 
 /* .legend-item {
     display: flex;
@@ -22,19 +55,23 @@ canvas[data-id="chartCanvas"] {
 } */
 
 .legend-color {
-    width: 13px;
-    height: 13px;
-    margin-right: 10px;
+    width: 15px;
+    height: 15px;
     border-radius: 50%;
 }
 
 .legend-text {
-    font-size: 14px;
+    color: #595959;
+
+    /* Paragraph */
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 150%; /* 24px */
+    letter-spacing: 0.08px;
 }
 
-/* .legend-item:hover .legend-text {
-    text-decoration: underline;
-} */
 
 .slds-grid {
     align-items: center;
@@ -42,6 +79,8 @@ canvas[data-id="chartCanvas"] {
 
 .underline {
     text-decoration: underline;
+    color: var(--vibrant-red);
+
 }
 
 .enlarged-text {
@@ -53,18 +92,22 @@ canvas[data-id="chartCanvas"] {
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-direction: column; /* This ensures the inputs are stacked vertically */
-    height: 100%; /* Adjust as needed */
+    flex-direction: column;
+    /* This ensures the inputs are stacked vertically */
+    height: 100%;
+    /* Adjust as needed */
 }
 
 .input-container {
-    margin: 5px 0; /* Add some spacing between inputs */
+    margin: 5px 0;
+    /* Add some spacing between inputs */
 }
 
 input {
     display: block;
     margin: auto;
 }
+
 .tooltip {
     visibility: hidden;
     position: relative;
@@ -73,26 +116,26 @@ input {
     background-color: rgba(0, 0, 0, 0.70);
     color: #fff;
     text-align: center;
-    padding: 5px ;
+    padding: 5px;
     border-radius: 6px;
     position: absolute;
     z-index: 1;
-  }
-  
-  /* Tooltip text */
+}
 
-  
-  .tooltip-visible {
+/* Tooltip text */
+
+
+.tooltip-visible {
     visibility: visible;
-  }
-  
+}
 
 
 
 
 
 
-  
+
+
 :host {
     --blue: #1e90ff;
     --white: #ffffff;
@@ -117,37 +160,10 @@ input {
     --pr-light-yellow: #fff6ea;
 
 }
+
 :host {
-    font-family: 'Open Sans';
-}
 
-
-.legend-item :hover {
-    text-decoration: underline;
-    color: var(--vibrant-red);
-
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
-.legend-item:hover .legend-text {
-    text-decoration: underline;
-}
-.legend {
-    flex-wrap: wrap;
-    justify-content: center;
-    /* font-size: 14px; */
-    /* font-family: 'Open Sans'; */
-    color: #595959;
-}
-
-.legend-item {
-    display: block;
-    width: fit-content;
-    align-items: center;
-    cursor: pointer;
-}
-
-.legend-content {
-    display: flex;
-}
-
 
 

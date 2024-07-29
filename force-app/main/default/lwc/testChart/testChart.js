@@ -61,31 +61,34 @@ export default class GenericChart extends LightningElement {
     addHoverEffects() {
         const legendItems = this.template.querySelectorAll('.legend-item');
         const canvas = this.template.querySelector('canvas[data-id="chartCanvas"]');
-        // console.log(legendItems);
+      
         legendItems.forEach((item) => {
             item.addEventListener('mouseenter', (event) => {
-                // console.log('legend hover')
                 const index = event.currentTarget.dataset.index;
                 this.highlightSegment(index, true);
+                this.hideTooltip()
                 event.currentTarget.querySelector('.legend-text').classList.add('underline');
             });
             item.addEventListener('mouseleave', (event) => {
-                // console.log('legend hover')
+                console.log('legend 2 hover')
                 this.clearHighlight();
                 event.currentTarget.querySelector('.legend-text').classList.remove('underline');
             });
             item.addEventListener('mouseover', (event) => {
-                // console.log('legend hover')
+                console.log('legend 3 hover')
                 const index = event.currentTarget.dataset.index;
                 this.highlightSegment(index, true);
+                this.hideTooltip()
                 event.currentTarget.querySelector('.legend-text').classList.add('underline');
             });
 
         });
 
         canvas.addEventListener('mousemove', (event) => {
+            console.log("mousemove")
             const mousePos = this.getMousePos(canvas, event);
             const index = this.getSegmentIndex(mousePos, canvas);
+            
             if (index !== -1) {
                 legendItems.forEach((item) => item.querySelector('.legend-text').classList.remove('underline'));
                 const legendItem = this.template.querySelector(`.legend-item[data-index="${index}"]`);
@@ -137,86 +140,164 @@ export default class GenericChart extends LightningElement {
         return -1;
     }
 
-    highlightSegment(index, highlight,  mousePos = {}) {
-        console.log('in highlightSegment')
+    highlightSegment(index, highlight, mousePos = {}) {
+        console.log('in highlightSegment');
         const canvas = this.template.querySelector('canvas[data-id="chartCanvas"]');
         const ctx = canvas.getContext('2d');
         const data = this.parseStringToArray(this.chartData);
         const labels = this.chartLabels.split(',').map(label => label.trim());
         const colors = this.chartColors.split(',').map(color => color.trim());
-
-        const innerRadius = 90;
-        const outerRadius = 150;
+    
+        const innerRadius = 75;
+        const outerRadius = 143;
         const enlargedInnerRadius = innerRadius * 1.1;
         const enlargedOuterRadius = outerRadius * 1.05;
-
+        const centerX = 143;
+        const centerY = 143;
+    
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         this.drawChart();
-
+    
         const total = data.reduce((acc, value) => acc + value, 0);
         let startAngle = 0;
-        // console.log('index: ' + index);
+    
         data.forEach((value, idx) => {
             const angle = (value / total) * 2 * Math.PI;
             let endAngle = startAngle + angle;
-
-            if (highlight && idx != index) {
+    
+            if (highlight && idx !== index) {
+                // Do nothing for non-highlighted segments
             } else {
                 ctx.beginPath();
-                ctx.arc(200, 200, enlargedOuterRadius, startAngle - (startAngle * 0.01), endAngle + (endAngle * 0.01));
-                ctx.arc(200, 200, 85, endAngle + (endAngle * 0.01), startAngle - (startAngle * 0.01), true); // Inner radius remains the same
+                ctx.arc(centerX, centerY, enlargedOuterRadius, startAngle - (startAngle * 0.01), endAngle + (endAngle * 0.01));
+                ctx.arc(centerX, centerY, enlargedInnerRadius, endAngle + (endAngle * 0.01), startAngle - (startAngle * 0.01), true);
                 ctx.closePath();
                 ctx.fillStyle = colors[idx];
                 ctx.fill();
-
+    
                 const text = '£' + this.kFormatter(value.toFixed(0));
                 const middleAngle = startAngle + angle / 2;
-                const labelX = 200 + Math.cos(middleAngle) * (innerRadius + enlargedOuterRadius) / 2;
-                const labelY = 200 + 5 + Math.sin(middleAngle) * (innerRadius + enlargedOuterRadius) / 2;
-
-                ctx.fillStyle = this.getTextColor(this.hexToRgb(colors[index]));
-                ctx.font = '16px Open Sans';
+                const labelX = centerX + Math.cos(middleAngle) * (innerRadius + enlargedOuterRadius) / 2;
+                const labelY = centerY + 5 + Math.sin(middleAngle) * (innerRadius + enlargedOuterRadius) / 2;
+    
+                ctx.fillStyle = this.getTextColor(this.hexToRgb(colors[idx]));
+                ctx.font = '16px system-ui';
                 ctx.textAlign = 'center';
                 if (this.isTextWithinSegment(ctx, text, labelX, labelY - 5)) {
                     ctx.fillText(text, labelX, labelY);
-                }else{
-                    if(mousePos){
-                        this.showTooltip('text', mousePos.x, mousePos.y)
+                    this.hideTooltip();
+                } else {
+                    if (mousePos) {
+                        this.showTooltip(text, mousePos.x, mousePos.y);
                     }
                 }
             }
-
+    
             startAngle = endAngle;
         });
-        
-         // Redraw inner text
+    
+        // Redraw inner text
         ctx.fillStyle = '#FFF';
         ctx.beginPath();
-        ctx.arc(200, 200, 60, 0, 2 * Math.PI);
+        ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
         ctx.closePath();
         ctx.fill();
-
+    
         ctx.fillStyle = '#5d5d5d';
-        ctx.font = '14px Open Sans';
+        ctx.font = '14px system-ui';
         ctx.textAlign = 'center';
-        ctx.fillText(this.title, 200, 190);
+        ctx.fillText(this.title, centerX, centerY - 10);
         ctx.fillStyle = '#000';
-        ctx.font = '24px Open Sans';
+        ctx.font = '24px system-ui';
         let sum = 0;
         data.forEach(num => {
             sum += num;
         });
-        ctx.fillText('£' + sum.toLocaleString(), 200, 220);
-        
+        ctx.fillText('£' + sum.toLocaleString(), centerX, centerY + 20);
     }
+    
+    // highlightSegment(index, highlight,  mousePos = {}) {
+    //     console.log('in highlightSegment')
+    //     const canvas = this.template.querySelector('canvas[data-id="chartCanvas"]');
+    //     const ctx = canvas.getContext('2d');
+    //     const data = this.parseStringToArray(this.chartData);
+    //     const labels = this.chartLabels.split(',').map(label => label.trim());
+    //     const colors = this.chartColors.split(',').map(color => color.trim());
+
+    //     const innerRadius = 90;
+    //     const outerRadius = 150;
+    //     const enlargedInnerRadius = innerRadius * 1.1;
+    //     const enlargedOuterRadius = outerRadius * 1.05;
+
+    //     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    //     this.drawChart();
+
+    //     const total = data.reduce((acc, value) => acc + value, 0);
+    //     let startAngle = 0;
+  
+    //     data.forEach((value, idx) => {
+    //         const angle = (value / total) * 2 * Math.PI;
+    //         let endAngle = startAngle + angle;
+
+    //         if (highlight && idx != index) {
+    //         } else {
+    //             ctx.beginPath();
+    //             ctx.arc(200, 200, enlargedOuterRadius, startAngle - (startAngle * 0.01), endAngle + (endAngle * 0.01));
+    //             ctx.arc(200, 200, 85, endAngle + (endAngle * 0.01), startAngle - (startAngle * 0.01), true); // Inner radius remains the same
+    //             ctx.closePath();
+    //             ctx.fillStyle = colors[idx];
+    //             ctx.fill();
+
+    //             const text = '£' + this.kFormatter(value.toFixed(0));
+    //             const middleAngle = startAngle + angle / 2;
+    //             const labelX = 200 + Math.cos(middleAngle) * (innerRadius + enlargedOuterRadius) / 2;
+    //             const labelY = 200 + 5 + Math.sin(middleAngle) * (innerRadius + enlargedOuterRadius) / 2;
+
+    //             ctx.fillStyle = this.getTextColor(this.hexToRgb(colors[index]));
+    //             ctx.font = '16px system-ui';
+    //             ctx.textAlign = 'center';
+    //             if (this.isTextWithinSegment(ctx, text, labelX, labelY - 5)) {
+    //                 ctx.fillText(text, labelX, labelY);
+    //                 this.hideTooltip()
+    //             }else{
+    //                 if(mousePos){
+    //                     this.showTooltip(text, mousePos.x, mousePos.y)
+    //                 }
+    //             }
+    //         }
+
+    //         startAngle = endAngle;
+    //     });
+        
+    //      // Redraw inner text
+    //     ctx.fillStyle = '#FFF';
+    //     ctx.beginPath();
+    //     ctx.arc(200, 200, 60, 0, 2 * Math.PI);
+    //     ctx.closePath();
+    //     ctx.fill();
+
+    //     ctx.fillStyle = '#5d5d5d';
+    //     ctx.font = '14px system-ui';
+    //     ctx.textAlign = 'center';
+    //     ctx.fillText(this.title, 200, 190);
+    //     ctx.fillStyle = '#000';
+    //     ctx.font = '24px system-ui';
+    //     let sum = 0;
+    //     data.forEach(num => {
+    //         sum += num;
+    //     });
+    //     ctx.fillText('£' + sum.toLocaleString(), 200, 220);
+        
+    // }
 
     showTooltip(text, x, y) {
         console.log('showTooltip')
         const tooltip = this.template.querySelector('div[data-id="tooltip"]');
-        tooltip.classList.add('tooltip-visible');
+        // tooltip.classList.add('tooltip-visible');
         console.log('tooltip', tooltip)
         tooltip.style.left = `${x + 10}px`;
         tooltip.style.top = `${y + 10}px`;
+        tooltip.style.visibility = 'visible';
         // tooltip.style.display = 'block';
         // tooltip.style.display = 'block';
 
@@ -225,10 +306,11 @@ export default class GenericChart extends LightningElement {
 
     hideTooltip() {
         const tooltip = this.template.querySelector('div[data-id="tooltip"]');
-        tooltip.style.display = 'none';
+        tooltip.style.visibility = 'hidden';
     }
 
     clearHighlight() {
+        this.hideTooltip()
         const canvas = this.template.querySelector('canvas[data-id="chartCanvas"]');
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -250,61 +332,130 @@ export default class GenericChart extends LightningElement {
     }
 
     drawDoughnutChart(ctx, data, labels, colors) {
-        const centerX = 200;
-        const centerY = 200;
-        const outerRadius = 150;
-        const innerRadius = 90;
+        const width = 286;
+        const height = 286;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const outerRadius = 93; // Outer radius
+        const innerRadius = 43; // Inner radius (outer radius - 50)
+    
         let startAngle = 0;
         const total = data.reduce((acc, value) => acc + value, 0);
-
+    
         data.forEach((value, index) => {
             const angle = (value / total) * 2 * Math.PI;
             const endAngle = startAngle + angle;
-
+    
             ctx.beginPath();
             ctx.arc(centerX, centerY, outerRadius, startAngle, endAngle);
             ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
             ctx.closePath();
             ctx.fillStyle = colors[index];
             ctx.fill();
-
+    
             // Link segment to legend item
             ctx.segmentIndex = index;
-
+    
             const middleAngle = startAngle + angle / 2;
             const labelX = centerX + Math.cos(middleAngle) * (innerRadius + outerRadius) / 2;
             const labelY = centerY + 5 + Math.sin(middleAngle) * (innerRadius + outerRadius) / 2;
             ctx.fillStyle = this.getTextColor(this.hexToRgb(colors[index]));
-            ctx.font = '13px Open Sans';
+            ctx.font = '13px system-ui';
             ctx.textAlign = 'center';
-
+    
             let text = '£' + this.kFormatter(value.toFixed(0));
-
+    
             if (this.isTextWithinSegment(ctx, text, labelX, labelY - 5)) {
                 ctx.fillText(text, labelX, labelY);
             }
-
+    
             startAngle = endAngle;
         });
-
+    
         ctx.fillStyle = '#FFF';
         ctx.beginPath();
         ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
         ctx.closePath();
         ctx.fill();
-
+    
         ctx.fillStyle = '#595959';
-        ctx.font = '14px Open Sans';
+        ctx.font = '14px system-ui';
         ctx.textAlign = 'center';
         ctx.fillText(this.title, centerX, centerY - 10);
         ctx.fillStyle = '#1A1A1A';
-        ctx.font = '24px Open Sans';
+        ctx.font = '24px system-ui';
         let sum = 0;
         data.forEach(num => {
             sum += num;
         });
         ctx.fillText('£' + sum.toLocaleString(), centerX, centerY + 20);
     }
+    
+
+    // drawDoughnutChart(ctx, data, labels, colors) {
+    //     const canvasSize = 286;
+    //     const centerX = canvasSize / 2;
+    //     const centerY = canvasSize / 2;
+    //     const outerRadius = 143;
+    //     const innerRadius = 86; // Adjusted for better visual proportions
+    //     let startAngle = 0;
+    //     const total = data.reduce((acc, value) => acc + value, 0);
+
+    //     // const centerX = 200;
+    //     // const centerY = 200;
+    //     // const outerRadius = 150;
+    //     // const innerRadius = 90;
+    //     // let startAngle = 0;
+    //     // const total = data.reduce((acc, value) => acc + value, 0);
+
+    //     data.forEach((value, index) => {
+    //         const angle = (value / total) * 2 * Math.PI;
+    //         const endAngle = startAngle + angle;
+
+    //         ctx.beginPath();
+    //         ctx.arc(centerX, centerY, outerRadius, startAngle, endAngle);
+    //         ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
+    //         ctx.closePath();
+    //         ctx.fillStyle = colors[index];
+    //         ctx.fill();
+
+    //         // Link segment to legend item
+    //         ctx.segmentIndex = index;
+
+    //         const middleAngle = startAngle + angle / 2;
+    //         const labelX = centerX + Math.cos(middleAngle) * (innerRadius + outerRadius) / 2;
+    //         const labelY = centerY + 5 + Math.sin(middleAngle) * (innerRadius + outerRadius) / 2;
+    //         ctx.fillStyle = this.getTextColor(this.hexToRgb(colors[index]));
+    //         ctx.font = '13px system-ui';
+    //         ctx.textAlign = 'center';
+
+    //         let text = '£' + this.kFormatter(value.toFixed(0));
+
+    //         if (this.isTextWithinSegment(ctx, text, labelX, labelY - 5)) {
+    //             ctx.fillText(text, labelX, labelY);
+    //         }
+
+    //         startAngle = endAngle;
+    //     });
+
+    //     ctx.fillStyle = '#FFF';
+    //     ctx.beginPath();
+    //     ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
+    //     ctx.closePath();
+    //     ctx.fill();
+
+    //     ctx.fillStyle = '#595959';
+    //     ctx.font = '14px system-ui';
+    //     ctx.textAlign = 'center';
+    //     ctx.fillText(this.title, centerX, centerY - 10);
+    //     ctx.fillStyle = '#1A1A1A';
+    //     ctx.font = '24px system-ui';
+    //     let sum = 0;
+    //     data.forEach(num => {
+    //         sum += num;
+    //     });
+    //     ctx.fillText('£' + sum.toLocaleString(), centerX, centerY + 20);
+    // }
 
     kFormatter(num) {
         return Math.abs(num) > 999 ? Math.sign(num) * ((Math.abs(num) / 1000).toFixed(1)) + 'K' : Math.sign(num) * Math.abs(num);
