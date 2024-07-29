@@ -1,0 +1,31 @@
+<template>
+    <lightning-card title="Chart" icon-name="custom:custom14">
+        <div class="slds-grid">
+            <div class="slds-m-around_medium canvas-container">
+                <div  id="tooltip" data-id="tooltip"  class="tooltip"></div>
+                <canvas data-id="chartCanvas" width="400" height="400"></canvas>
+            </div>
+            <div class="legend">
+                <template for:each={legendItems} for:item="item">
+                    <div key={item.label} class="legend-item" data-index={item.index}>
+                        <div class="legend-content">
+                        <div class="legend-color" data-index={item.index}></div>
+                        <div class="legend-text" data-index={item.index}>{item.label} - £{item.value}</div></div>
+                    </div>
+                </template>
+            </div>
+            
+        </div>
+        <template if:true={isTestMode}>
+            <hr>
+            <div class="test-mode">
+                <template for:each={legendItems} for:item="item">
+                    {item.label}
+                    <div key={item.label}>
+                        <input id="test-mode-input" data-index={item.index} value={item.value} onblur={onblur}>
+                    </div>
+                </template>
+            </div>
+        </template>
+    </lightning-card>
+</template>
