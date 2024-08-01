@@ -1,4 +1,8 @@
-import { LightningElement, api, track } from 'lwc';
+import {
+    LightningElement,
+    api,
+    track
+} from 'lwc';
 
 export default class GenericChart extends LightningElement {
     @api isTestMode = false;
@@ -6,52 +10,75 @@ export default class GenericChart extends LightningElement {
     @api chartData = ''; // String representing array of data values
     @api chartLabels = ''; // String representing array of labels
     @api chartColors = ''; // String representing array of colors
+    @api subTitle = ''; // String representing array of colors
     @api title = ''; // Title to be displayed in the center for doughnut/pie charts
-    @api subTitle = ''; // Sub-title to be displayed in the center for doughnut/pie charts
+    @api header = ''; // Sub-title to be displayed in the center for doughnut/pie charts
     chartInitialized = false;
 
     @track legendItems = [];
+    @track chartHeader = '';
     chart; // Store chart instance
+    canvas; // Store canvas element
+    ctx; // Store canvas context
+    data;
+    labels;
+    colors;
+    totalAmount;
+    chartParameters = {}
+
+    chartStyles = {
+        innerBackground: '#FFF',
+        fontInnerText: '16px system-ui',
+        fontInnerSum: '26px Open Sans',
+        fontColorInnerText: '#595959',
+        fontColorInnerSum: '#1A1A1A',
+
+    }
 
     renderedCallback() {
-        if (this.chartInitialized) {
-            return;
-        }
-        // console.log('Test mode: ' + this.isTestMode);
+        if (this.chartInitialized) return;
+        // console.log(this.chartStyles.fontColorInnerText)
         this.chartInitialized = true;
+        this.canvas = this.template.querySelector('canvas[data-id="chartCanvas"]');
+        this.ctx = this.canvas.getContext('2d');
+        this.data = this.parseStringToArray(this.chartData);
+        this.labels = this.chartLabels.split(',').map(label => label.trim());
+        this.colors = this.chartColors.split(',').map(color => color.trim());
+        this.totalAmount = this.data.reduce((acc, value) => acc + value, 0);
+        this.chartHeader = `${this.header} - £${this.totalAmount}`
+        this.chartParameters = {
+            centerX: 150,
+            centerY: 150,
+            outerRadius: 143,
+            innerRadius: 88,
+        }
         this.drawChart();
-        const colors = this.chartColors.split(',').map(color => color.trim());
 
-        setTimeout(() => {
-            let elements = this.template.querySelectorAll(".legend-color");
-            for (let i = 0; i < elements.length; i++) {
-                elements[i].setAttribute("style", "background-color:" + colors[i] + ";");
-            }
+        requestAnimationFrame(() => {
+            const elements = this.template.querySelectorAll(".legend-color");
+            elements.forEach((element, i) => {
+                element.style.backgroundColor = this.colors[i];
+            });
             this.addHoverEffects();
-        }, 0);
-
-        
+        });
     }
 
     drawChart() {
         const canvas = this.template.querySelector('canvas[data-id="chartCanvas"]');
         if (!canvas) return;
-        const ctx = canvas.getContext('2d');
+        const total = this.data.reduce((acc, value) => acc + value, 0)
+        const currency = this.formatCurrency(total)
 
-        const data = this.parseStringToArray(this.chartData);
-        const labels = this.chartLabels.split(',').map(label => label.trim());
-        const colors = this.chartColors.split(',').map(color => color.trim());
-
-        this.legendItems = labels.map((label, index) => ({
+        this.chartHeader = `${this.header} - £${currency}`
+        this.legendItems = this.labels.map((label, index) => ({
             label,
-            color: colors[index],
-            value: parseFloat(data[index]).toFixed(2),
+            color: this.colors[index],
+            value: this.formatCurrency(this.data[index]),
             index
         }));
-
         switch (this.chartType) {
             case 'doughnut':
-                this.drawDoughnutChart(ctx, data, labels, colors);
+                this.drawDoughnutChart();
                 break;
             default:
                 console.error('Unsupported chart type');
@@ -60,77 +87,94 @@ export default class GenericChart extends LightningElement {
 
     addHoverEffects() {
         const legendItems = this.template.querySelectorAll('.legend-item');
-        const canvas = this.template.querySelector('canvas[data-id="chartCanvas"]');
-      
+
         legendItems.forEach((item) => {
             item.addEventListener('mouseenter', (event) => {
                 const index = event.currentTarget.dataset.index;
-                this.highlightSegment(index, true);
+                this.highlightSegment(index);
                 this.hideTooltip()
                 event.currentTarget.querySelector('.legend-text').classList.add('underline');
             });
             item.addEventListener('mouseleave', (event) => {
-                console.log('legend 2 hover')
                 this.clearHighlight();
                 event.currentTarget.querySelector('.legend-text').classList.remove('underline');
             });
             item.addEventListener('mouseover', (event) => {
-                console.log('legend 3 hover')
                 const index = event.currentTarget.dataset.index;
-                this.highlightSegment(index, true);
+                this.highlightSegment(index);
                 this.hideTooltip()
                 event.currentTarget.querySelector('.legend-text').classList.add('underline');
+            });
+            item.addEventListener('click', (event) => {
+                const index = event.currentTarget.dataset.index;
+                this.handleClick(index);
             });
 
         });
 
-        canvas.addEventListener('mousemove', (event) => {
-            console.log("mousemove")
-            const mousePos = this.getMousePos(canvas, event);
-            const index = this.getSegmentIndex(mousePos, canvas);
-            
+        this.canvas.addEventListener('mousemove', (event) => {
+            const mousePos = this.getMousePos(event);
+            const index = this.getSegmentIndex(mousePos);
+
             if (index !== -1) {
                 legendItems.forEach((item) => item.querySelector('.legend-text').classList.remove('underline'));
                 const legendItem = this.template.querySelector(`.legend-item[data-index="${index}"]`);
                 if (legendItem) {
                     legendItem.querySelector('.legend-text').classList.add('underline');
-                    this.highlightSegment(index, true, mousePos);
+                    this.highlightSegment(index, mousePos);
                 }
             } else {
                 legendItems.forEach((item) => item.querySelector('.legend-text').classList.remove('underline'));
+                this.hideTooltip()
                 this.clearHighlight();
             }
         });
 
-        canvas.addEventListener('mouseout', () => {
+        this.canvas.addEventListener('mouseout', () => {
             legendItems.forEach((item) => item.querySelector('.legend-text').classList.remove('underline'));
             this.clearHighlight();
         });
+
+        this.canvas.addEventListener('click', (event) => {
+            const mousePos = this.getMousePos(event);
+            const index = this.getSegmentIndex(mousePos);
+            if (index !== -1) {
+                this.handleClick(index);
+            }
+        });
     }
 
-    getMousePos(canvas, evt) {
-        const rect = canvas.getBoundingClientRect();
+    handleClick(index) {
+        // Implement the action to be taken when a segment is clicked
+        alert(`${this.labels[index]} - ${this.data[index]} clicked`);
+    }
+
+
+    getMousePos(evt) {
+        const rect = this.canvas.getBoundingClientRect();
         return {
             x: evt.clientX - rect.left,
             y: evt.clientY - rect.top
         };
     }
 
-    getSegmentIndex(mousePos, canvas) {
-        const ctx = canvas.getContext('2d');
-        const data = this.parseStringToArray(this.chartData);
-        const total = data.reduce((acc, value) => acc + value, 0);
-        let startAngle = 0;
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const radius = 150;
+    getSegmentIndex(mousePos) {
+        const {
+            ctx
+        } = this
+        const total = this.data.reduce((acc, value) => acc + value, 0);
+        let startAngle = (270 * Math.PI) / 180; // Starting at the top (270 degrees)
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        const outerRadius = 150;
+        const innerRadius = 88;
 
-        for (let i = 0; i < data.length; i++) {
-            const angle = (data[i] / total) * 2 * Math.PI;
+        for (let i = 0; i < this.data.length; i++) {
+            const angle = (this.data[i] / total) * 2 * Math.PI;
             const endAngle = startAngle + angle;
             ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-            ctx.arc(centerX, centerY, 90, endAngle, startAngle, true);
+            ctx.arc(centerX, centerY, outerRadius, startAngle, endAngle);
+            ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
             ctx.closePath();
             if (ctx.isPointInPath(mousePos.x, mousePos.y)) {
                 return i;
@@ -139,183 +183,135 @@ export default class GenericChart extends LightningElement {
         }
         return -1;
     }
-
-    highlightSegment(index, highlight, mousePos = {}) {
-        console.log('in highlightSegment');
-        const canvas = this.template.querySelector('canvas[data-id="chartCanvas"]');
-        const ctx = canvas.getContext('2d');
-        const data = this.parseStringToArray(this.chartData);
-        const labels = this.chartLabels.split(',').map(label => label.trim());
-        const colors = this.chartColors.split(',').map(color => color.trim());
-    
-        const innerRadius = 75;
-        const outerRadius = 143;
+    highlightSegment(index, mousePos = {}) {
+        const {
+            centerX,
+            centerY,
+            outerRadius,
+            innerRadius
+        } = this.chartParameters;
+        const {
+            ctx,
+            data
+        } = this
+        const totalAmount = data.reduce((acc, value) => acc + value, 0);
         const enlargedInnerRadius = innerRadius * 1.1;
-        const enlargedOuterRadius = outerRadius * 1.05;
-        const centerX = 143;
-        const centerY = 143;
-    
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const enlargedOuterRadius = outerRadius * 1.03;
+
+        let startAngle = (270 * Math.PI) / 180; // Starting at the top
+        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.drawChart();
-    
-        const total = data.reduce((acc, value) => acc + value, 0);
-        let startAngle = 0;
-    
         data.forEach((value, idx) => {
-            const angle = (value / total) * 2 * Math.PI;
+            const angle = (value / totalAmount) * 2 * Math.PI;
             let endAngle = startAngle + angle;
-    
-            if (highlight && idx !== index) {
-                // Do nothing for non-highlighted segments
+
+            if (idx != index || value === 0) {
+                // No highlight
             } else {
+                // Adjusted the padding to be a fixed small value to avoid overly wide highlights
+                const padding = 0.03;
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, enlargedOuterRadius, startAngle - (startAngle * 0.01), endAngle + (endAngle * 0.01));
-                ctx.arc(centerX, centerY, enlargedInnerRadius, endAngle + (endAngle * 0.01), startAngle - (startAngle * 0.01), true);
-                ctx.closePath();
-                ctx.fillStyle = colors[idx];
+
+                ctx.arc(centerX, centerY, enlargedOuterRadius, startAngle - padding, endAngle + padding);
+                ctx.arc(centerX, centerY, 85, endAngle + padding, startAngle - padding, true);
+                ctx.fillStyle = this.colors[idx];
                 ctx.fill();
-    
-                const text = '£' + this.kFormatter(value.toFixed(0));
+
+                let formatAmount = '£' + this.formatCurrency(value, true);
+
                 const middleAngle = startAngle + angle / 2;
                 const labelX = centerX + Math.cos(middleAngle) * (innerRadius + enlargedOuterRadius) / 2;
                 const labelY = centerY + 5 + Math.sin(middleAngle) * (innerRadius + enlargedOuterRadius) / 2;
-    
-                ctx.fillStyle = this.getTextColor(this.hexToRgb(colors[idx]));
+
+                ctx.fillStyle = this.getTextColor(this.hexToRgb(this.colors[index]));
                 ctx.font = '16px system-ui';
                 ctx.textAlign = 'center';
-                if (this.isTextWithinSegment(ctx, text, labelX, labelY - 5)) {
-                    ctx.fillText(text, labelX, labelY);
+                if (this.isTextWithinSegment(ctx, formatAmount, labelX, labelY - 5)) {
+                    ctx.fillText(formatAmount, labelX, labelY);
                     this.hideTooltip();
                 } else {
                     if (mousePos) {
-                        this.showTooltip(text, mousePos.x, mousePos.y);
+                        this.showTooltip(formatAmount, mousePos.x, mousePos.y);
                     }
                 }
             }
-    
+
             startAngle = endAngle;
         });
-    
-        // Redraw inner text
-        ctx.fillStyle = '#FFF';
+
+        this.drawInnerText(centerX, centerY, totalAmount, 60);
+    }
+
+    drawDoughnutChart() {
+        const {
+            centerX,
+            centerY,
+            outerRadius,
+            innerRadius
+        } = this.chartParameters;
+        const {
+            ctx,
+            data
+        } = this
+        let startAngle = (270 * Math.PI) / 180; // Starting at the top
+        const totalAmount = this.data.reduce((acc, value) => acc + value, 0);
+
+        data.forEach((value, index) => {
+            const angle = (value / totalAmount) * 2 * Math.PI;
+            const endAngle = startAngle + angle;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, outerRadius, startAngle, endAngle);
+            ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
+            ctx.closePath();
+            ctx.fillStyle = this.colors[index];
+            ctx.fill();
+
+            // Link segment to legend item
+            ctx.segmentIndex = index;
+            const middleAngle = startAngle + angle / 2;
+            const labelX = centerX + Math.cos(middleAngle) * (innerRadius + outerRadius) / 2;
+            const labelY = centerY + 5 + Math.sin(middleAngle) * (innerRadius + outerRadius) / 2;
+            ctx.fillStyle = this.getTextColor(this.hexToRgb(this.colors[index]));
+            ctx.font = '14px system-ui';
+            ctx.textAlign = 'center';
+            let formatAmount = '£' + this.formatCurrency(value, true);
+
+            if (this.isTextWithinSegment(ctx, formatAmount, labelX, labelY - 5)) {
+                ctx.fillText(formatAmount, labelX, labelY);
+            }
+
+            startAngle = endAngle;
+        });
+
+        this.drawInnerText(centerX, centerY, totalAmount, innerRadius);
+    }
+
+    drawInnerText(centerX, centerY, totalAmount, innerRadius) {
+        const {
+            ctx
+        } = this
+        // Inner background
+        ctx.fillStyle = this.chartStyles.innerBackground;
         ctx.beginPath();
         ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
         ctx.closePath();
         ctx.fill();
-    
-        ctx.fillStyle = '#5d5d5d';
-        ctx.font = '14px system-ui';
+        // Inner text header
+        ctx.fillStyle = this.chartStyles.fontColorInnerText;
+        ctx.font = `normal 400 16px system-ui`;
         ctx.textAlign = 'center';
-        ctx.fillText(this.title, centerX, centerY - 10);
-        ctx.fillStyle = '#000';
-        ctx.font = '24px system-ui';
-        let sum = 0;
-        data.forEach(num => {
-            sum += num;
-        });
-        ctx.fillText('£' + sum.toLocaleString(), centerX, centerY + 20);
-    }
-    
-    // highlightSegment(index, highlight,  mousePos = {}) {
-    //     console.log('in highlightSegment')
-    //     const canvas = this.template.querySelector('canvas[data-id="chartCanvas"]');
-    //     const ctx = canvas.getContext('2d');
-    //     const data = this.parseStringToArray(this.chartData);
-    //     const labels = this.chartLabels.split(',').map(label => label.trim());
-    //     const colors = this.chartColors.split(',').map(color => color.trim());
-
-    //     const innerRadius = 90;
-    //     const outerRadius = 150;
-    //     const enlargedInnerRadius = innerRadius * 1.1;
-    //     const enlargedOuterRadius = outerRadius * 1.05;
-
-    //     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    //     this.drawChart();
-
-    //     const total = data.reduce((acc, value) => acc + value, 0);
-    //     let startAngle = 0;
-  
-    //     data.forEach((value, idx) => {
-    //         const angle = (value / total) * 2 * Math.PI;
-    //         let endAngle = startAngle + angle;
-
-    //         if (highlight && idx != index) {
-    //         } else {
-    //             ctx.beginPath();
-    //             ctx.arc(200, 200, enlargedOuterRadius, startAngle - (startAngle * 0.01), endAngle + (endAngle * 0.01));
-    //             ctx.arc(200, 200, 85, endAngle + (endAngle * 0.01), startAngle - (startAngle * 0.01), true); // Inner radius remains the same
-    //             ctx.closePath();
-    //             ctx.fillStyle = colors[idx];
-    //             ctx.fill();
-
-    //             const text = '£' + this.kFormatter(value.toFixed(0));
-    //             const middleAngle = startAngle + angle / 2;
-    //             const labelX = 200 + Math.cos(middleAngle) * (innerRadius + enlargedOuterRadius) / 2;
-    //             const labelY = 200 + 5 + Math.sin(middleAngle) * (innerRadius + enlargedOuterRadius) / 2;
-
-    //             ctx.fillStyle = this.getTextColor(this.hexToRgb(colors[index]));
-    //             ctx.font = '16px system-ui';
-    //             ctx.textAlign = 'center';
-    //             if (this.isTextWithinSegment(ctx, text, labelX, labelY - 5)) {
-    //                 ctx.fillText(text, labelX, labelY);
-    //                 this.hideTooltip()
-    //             }else{
-    //                 if(mousePos){
-    //                     this.showTooltip(text, mousePos.x, mousePos.y)
-    //                 }
-    //             }
-    //         }
-
-    //         startAngle = endAngle;
-    //     });
-        
-    //      // Redraw inner text
-    //     ctx.fillStyle = '#FFF';
-    //     ctx.beginPath();
-    //     ctx.arc(200, 200, 60, 0, 2 * Math.PI);
-    //     ctx.closePath();
-    //     ctx.fill();
-
-    //     ctx.fillStyle = '#5d5d5d';
-    //     ctx.font = '14px system-ui';
-    //     ctx.textAlign = 'center';
-    //     ctx.fillText(this.title, 200, 190);
-    //     ctx.fillStyle = '#000';
-    //     ctx.font = '24px system-ui';
-    //     let sum = 0;
-    //     data.forEach(num => {
-    //         sum += num;
-    //     });
-    //     ctx.fillText('£' + sum.toLocaleString(), 200, 220);
-        
-    // }
-
-    showTooltip(text, x, y) {
-        console.log('showTooltip')
-        const tooltip = this.template.querySelector('div[data-id="tooltip"]');
-        // tooltip.classList.add('tooltip-visible');
-        console.log('tooltip', tooltip)
-        tooltip.style.left = `${x + 10}px`;
-        tooltip.style.top = `${y + 10}px`;
-        tooltip.style.visibility = 'visible';
-        // tooltip.style.display = 'block';
-        // tooltip.style.display = 'block';
-
-        tooltip.innerHTML = text;
-    }
-
-    hideTooltip() {
-        const tooltip = this.template.querySelector('div[data-id="tooltip"]');
-        tooltip.style.visibility = 'hidden';
+        ctx.fillText(this.title, centerX, centerY - 23);
+        // Inner total amount
+        ctx.fillStyle = this.chartStyles.fontColorInnerSum;
+        ctx.font = `normal 600 26px system-ui`;
+        const formatAmount = '£' + this.formatCurrency(totalAmount, false, true);
+        ctx.fillText(formatAmount, centerX, centerY + 9);
     }
 
     clearHighlight() {
         this.hideTooltip()
-        const canvas = this.template.querySelector('canvas[data-id="chartCanvas"]');
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Remove underline from all legend items
         const legendItems = this.template.querySelectorAll('.legend-text');
         legendItems.forEach((item) => {
             item.classList.remove('underline');
@@ -331,140 +327,33 @@ export default class GenericChart extends LightningElement {
         return str.split(',').map(item => parseFloat(item.trim()));
     }
 
-    drawDoughnutChart(ctx, data, labels, colors) {
-        const width = 286;
-        const height = 286;
-        const centerX = width / 2;
-        const centerY = height / 2;
-        const outerRadius = 93; // Outer radius
-        const innerRadius = 43; // Inner radius (outer radius - 50)
-    
-        let startAngle = 0;
-        const total = data.reduce((acc, value) => acc + value, 0);
-    
-        data.forEach((value, index) => {
-            const angle = (value / total) * 2 * Math.PI;
-            const endAngle = startAngle + angle;
-    
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, outerRadius, startAngle, endAngle);
-            ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
-            ctx.closePath();
-            ctx.fillStyle = colors[index];
-            ctx.fill();
-    
-            // Link segment to legend item
-            ctx.segmentIndex = index;
-    
-            const middleAngle = startAngle + angle / 2;
-            const labelX = centerX + Math.cos(middleAngle) * (innerRadius + outerRadius) / 2;
-            const labelY = centerY + 5 + Math.sin(middleAngle) * (innerRadius + outerRadius) / 2;
-            ctx.fillStyle = this.getTextColor(this.hexToRgb(colors[index]));
-            ctx.font = '13px system-ui';
-            ctx.textAlign = 'center';
-    
-            let text = '£' + this.kFormatter(value.toFixed(0));
-    
-            if (this.isTextWithinSegment(ctx, text, labelX, labelY - 5)) {
-                ctx.fillText(text, labelX, labelY);
+    formatCurrency(amount, useAbbreviations = false, isCenter = false) {
+        let formattedAmount;
+
+        if (useAbbreviations) {
+            if (amount > 999999) {
+                formattedAmount = Math.floor(amount / 1000000) + 'M';
+            } else if (amount >= 1_000) {
+                formattedAmount = Math.floor(amount / 1000) + 'K';
+            } else {
+                formattedAmount = Math.floor(amount).toString();
             }
-    
-            startAngle = endAngle;
-        });
-    
-        ctx.fillStyle = '#FFF';
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
-        ctx.closePath();
-        ctx.fill();
-    
-        ctx.fillStyle = '#595959';
-        ctx.font = '14px system-ui';
-        ctx.textAlign = 'center';
-        ctx.fillText(this.title, centerX, centerY - 10);
-        ctx.fillStyle = '#1A1A1A';
-        ctx.font = '24px system-ui';
-        let sum = 0;
-        data.forEach(num => {
-            sum += num;
-        });
-        ctx.fillText('£' + sum.toLocaleString(), centerX, centerY + 20);
+        } else {
+            if (isCenter) {
+                formattedAmount = Math.floor(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            } else {
+                formattedAmount = amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            }
+        }
+
+        return formattedAmount;
     }
-    
 
-    // drawDoughnutChart(ctx, data, labels, colors) {
-    //     const canvasSize = 286;
-    //     const centerX = canvasSize / 2;
-    //     const centerY = canvasSize / 2;
-    //     const outerRadius = 143;
-    //     const innerRadius = 86; // Adjusted for better visual proportions
-    //     let startAngle = 0;
-    //     const total = data.reduce((acc, value) => acc + value, 0);
-
-    //     // const centerX = 200;
-    //     // const centerY = 200;
-    //     // const outerRadius = 150;
-    //     // const innerRadius = 90;
-    //     // let startAngle = 0;
-    //     // const total = data.reduce((acc, value) => acc + value, 0);
-
-    //     data.forEach((value, index) => {
-    //         const angle = (value / total) * 2 * Math.PI;
-    //         const endAngle = startAngle + angle;
-
-    //         ctx.beginPath();
-    //         ctx.arc(centerX, centerY, outerRadius, startAngle, endAngle);
-    //         ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
-    //         ctx.closePath();
-    //         ctx.fillStyle = colors[index];
-    //         ctx.fill();
-
-    //         // Link segment to legend item
-    //         ctx.segmentIndex = index;
-
-    //         const middleAngle = startAngle + angle / 2;
-    //         const labelX = centerX + Math.cos(middleAngle) * (innerRadius + outerRadius) / 2;
-    //         const labelY = centerY + 5 + Math.sin(middleAngle) * (innerRadius + outerRadius) / 2;
-    //         ctx.fillStyle = this.getTextColor(this.hexToRgb(colors[index]));
-    //         ctx.font = '13px system-ui';
-    //         ctx.textAlign = 'center';
-
-    //         let text = '£' + this.kFormatter(value.toFixed(0));
-
-    //         if (this.isTextWithinSegment(ctx, text, labelX, labelY - 5)) {
-    //             ctx.fillText(text, labelX, labelY);
-    //         }
-
-    //         startAngle = endAngle;
-    //     });
-
-    //     ctx.fillStyle = '#FFF';
-    //     ctx.beginPath();
-    //     ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
-    //     ctx.closePath();
-    //     ctx.fill();
-
-    //     ctx.fillStyle = '#595959';
-    //     ctx.font = '14px system-ui';
-    //     ctx.textAlign = 'center';
-    //     ctx.fillText(this.title, centerX, centerY - 10);
-    //     ctx.fillStyle = '#1A1A1A';
-    //     ctx.font = '24px system-ui';
-    //     let sum = 0;
-    //     data.forEach(num => {
-    //         sum += num;
-    //     });
-    //     ctx.fillText('£' + sum.toLocaleString(), centerX, centerY + 20);
-    // }
-
-    kFormatter(num) {
-        return Math.abs(num) > 999 ? Math.sign(num) * ((Math.abs(num) / 1000).toFixed(1)) + 'K' : Math.sign(num) * Math.abs(num);
-    }
 
     isTextWithinSegment(ctx, text, x, y) {
         const textMetrics = ctx.measureText(text);
         const textWidth = textMetrics.width;
-        const textHeight = parseInt(ctx.font, 8);
+        const textHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
         const bottomLeftVertexX = x - textWidth / 2;
         const bottomLeftVertexY = y + textHeight / 2;
 
@@ -473,7 +362,18 @@ export default class GenericChart extends LightningElement {
         const vertexTL = [bottomLeftVertexX, bottomLeftVertexY - textHeight]; // top left vertex coordinates
         const vertexTR = [bottomLeftVertexX + textWidth, bottomLeftVertexY - textHeight]; // top right vertex coordinates
 
-        return this.areVertexColorsEqual(ctx, [vertexBL, vertexBR, vertexTL, vertexTR]);
+        // Enhanced check to ensure all vertices are within the segment
+        return this.areVertexColorsEqual(ctx, [vertexBL, vertexBR, vertexTL, vertexTR]) &&
+            this.isInsideSegment(ctx, vertexBL) &&
+            this.isInsideSegment(ctx, vertexBR) &&
+            this.isInsideSegment(ctx, vertexTL) &&
+            this.isInsideSegment(ctx, vertexTR);
+    }
+
+    // Helper function to check if a point is inside the current segment
+    isInsideSegment(ctx, vertex) {
+        // Use the ctx.isPointInPath to determine if the vertex is inside the current path
+        return ctx.isPointInPath(vertex[0], vertex[1]);
     }
 
     areVertexColorsEqual(ctx, vertexes) {
@@ -481,7 +381,6 @@ export default class GenericChart extends LightningElement {
         const vertexColor1 = this.getBackgroundColor(ctx, vertexes[1]);
         const vertexColor2 = this.getBackgroundColor(ctx, vertexes[2]);
         const vertexColor3 = this.getBackgroundColor(ctx, vertexes[3]);
-
         return JSON.stringify(vertexColor0) === JSON.stringify(vertexColor1) &&
             JSON.stringify(vertexColor1) === JSON.stringify(vertexColor2) &&
             JSON.stringify(vertexColor2) === JSON.stringify(vertexColor3);
@@ -530,15 +429,25 @@ export default class GenericChart extends LightningElement {
         return color > 125 ? "#1A1A1A" : "#FFFFFF";
     }
 
+    showTooltip(text, x, y) {
+        const tooltip = this.template.querySelector('div[data-id="tooltip"]');
+        tooltip.style.left = `${x + 10}px`;
+        tooltip.style.top = `${y + 10}px`;
+        tooltip.style.visibility = 'visible';
+        tooltip.innerHTML = text;
+    }
+
+    hideTooltip() {
+        const tooltip = this.template.querySelector('.tooltip');
+        tooltip.style.visibility = 'hidden';
+    }
+
     //test mode
 
     onblur(event) {
-        const data = this.parseStringToArray(this.chartData);
-        data[event.target.dataset.index] = Number(event.target.value);
-        this.chartData = data.toString();
-        const canvas = this.template.querySelector('canvas[data-id="chartCanvas"]');
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        this.data[event.target.dataset.index] = parseFloat(event.target.value.replace(/,/g, ''))
+        this.chartData = this.data.toString();
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.drawChart();
     }
 }

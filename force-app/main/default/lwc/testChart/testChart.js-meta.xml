@@ -18,6 +18,7 @@
             <property name="chartColors" type="String" label="Chart Colors"/>
             <property name="title" type="String" label="Title"/>
             <property name="subTitle" type="String" label="Sub Title"/>
+            <property name="header" type="String" label="Header"/>
         </targetConfig>
         <targetConfig targets="lightningCommunity__Default">
             <property name="isTestMode" type="Boolean" default="false" label="Test mode"/>
@@ -27,6 +28,7 @@
             <property name="chartColors" type="String" label="Chart Colors"/>
             <property name="title" type="String" label="Title"/>
             <property name="subTitle" type="String" label="Sub Title"/>
+            <property name="header" type="String" label="Header"/>
         </targetConfig>
     </targetConfigs>
 </LightningComponentBundle>
