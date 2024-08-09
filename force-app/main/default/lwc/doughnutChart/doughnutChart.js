@@ -37,7 +37,7 @@ export default class DoughnutChart extends LightningElement {
 
                     loadScript(this, ChartjsPluginDatalabels)
                 ]).then(() => {
-                    window.Chart.register(window.ChartDataLabels);
+                    // window.Chart.register(window.ChartDataLabels);
                     this.initializeChart();
                 })
 
@@ -47,11 +47,14 @@ export default class DoughnutChart extends LightningElement {
             });
     }
     initializeChart() {
+        
         const ctx = this.template.querySelector('canvas').getContext('2d');
         const data = this.chartData.map(item => item.value);
         const labels = this.chartData.map(item => item.label);
         const backgroundColors = this.backgroundColors;
         this.totalAmount = data.reduce((a, b) => a + b, 0);
+// console.log(first)
+console.log(window.Chart, "Chart")
 
         this.chart = new Chart(ctx, {
             type: 'doughnut',

@@ -2,6 +2,7 @@
 <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
     <apiVersion>61.0</apiVersion>
     <isExposed>true</isExposed>
+
     <targets>
         <target>lightning__AppPage</target>
         <target>lightning__RecordPage</target>
@@ -9,26 +10,27 @@
         <target>lightningCommunity__Page</target>
         <target>lightningCommunity__Default</target>
     </targets>
+    
     <targetConfigs>
         <targetConfig targets="lightning__AppPage, lightning__RecordPage, lightning__HomePage">
             <property name="isTestMode" type="Boolean" default="false" label="Test mode"/>
-            <property name="chartType" type="String" default="doughnut" label="Chart Type"/>
+            <property name="chartHeader" type="String" label="Chart Header"/>
             <property name="chartData" type="String" label="Chart Data"/>
-            <property name="chartLabels" type="String" label="Chart Labels"/>
             <property name="chartColors" type="String" label="Chart Colors"/>
-            <property name="title" type="String" label="Title"/>
-            <property name="subTitle" type="String" label="Sub Title"/>
-            <property name="header" type="String" label="Header"/>
+            <property name="chartInfoText" type="String" label="Chart Info Text"/>
+            <property name="chartInfoTextLink" type="String" label="Chart Info Text Link"/>
+            <property name="lowSurcharge" type="String" label="Low surcharge"/>
+            <property name="fuelSurcharge" type="String" label="Fuel surcharge"/>
         </targetConfig>
         <targetConfig targets="lightningCommunity__Default">
             <property name="isTestMode" type="Boolean" default="false" label="Test mode"/>
-            <property name="chartType" type="String" default="doughnut" label="Chart Type"/>
+            <property name="chartHeader" type="String" label="Chart Header"/>
             <property name="chartData" type="String" label="Chart Data"/>
-            <property name="chartLabels" type="String" label="Chart Labels"/>
             <property name="chartColors" type="String" label="Chart Colors"/>
-            <property name="title" type="String" label="Title"/>
-            <property name="subTitle" type="String" label="Sub Title"/>
-            <property name="header" type="String" label="Header"/>
+            <property name="chartInfoText" type="String" label="Chart Info Text"/>
+            <property name="chartInfoTextLink" type="String" label="Chart Info Text Link"/>
+            <property name="lowSurcharge" type="String" label="Low surcharge"/>
+            <property name="fuelSurcharge" type="String" label="Fuel surcharge"/>
         </targetConfig>
     </targetConfigs>
 </LightningComponentBundle>
