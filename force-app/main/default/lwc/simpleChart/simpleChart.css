@@ -1,61 +1,71 @@
-.canvas-container {
-    position: relative;
+.chart-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 20px;
+}
+
+.chart-header {
+    font-size: 1.2em;
+    margin-bottom: 10px;
     text-align: center;
+    color: var(--Neutrals-Dark-Grey, #595959);
+    font-family: 'Open Sans', sans-serif;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 24px;
+    letter-spacing: 0.08px;
 }
 
-canvas[data-id="chartCanvas"] {
-    display: block;
+canvas {
+    max-width: 100%;
+    max-height: 400px; /* Adjust based on your requirements */
 }
 
-.legend {
-    flex-wrap: wrap;
-    justify-content: center;
-    font-size: 14px;
-    font-family: Open Sans, serif;
-    color: #5d5d5d;
+.chart-legend {
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+    width: 100%;
+    align-items: center;
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    cursor: pointer;
+    margin-bottom: 5px;
+    width: 80%;
+    justify-content: space-between;
 }
 
 .legend-color {
-    width: 13px;
-    height: 13px;
+    width: 20px;
+    height: 20px;
     margin-right: 10px;
     border-radius: 50%;
 }
 
-.legend-text {
-    font-size: 14px;
-}
-
-.legend-item:hover .legend-text {
-    text-decoration: underline;
-}
-
-.slds-grid {
-    align-items: center;
-}
-
-.underline {
-    text-decoration: underline;
-}
-
-.enlarged-text {
+.legend-label {
+    flex-grow: 1;
+    text-align: left;
+    color: var(--Neutrals-Dark-Grey, #595959);
+    font-family: 'Open Sans', sans-serif;
     font-size: 16px;
-    font-weight: bold;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 24px;
+    letter-spacing: 0.08px;
 }
 
-    .tooltip {
-        position: absolute;
-        background: rgba(0, 0, 0, 0.7);
-        color: #fff;
-        padding: 5px;
-        border-radius: 3px;
-        pointer-events: none;
-        font-size: 12px;
-        transform: translate(-50%, -50%);
-    }
+.legend-value {
+    margin-left: 10px;
+    color: var(--Neutrals-Dark-Grey, #595959);
+    font-family: 'Open Sans', sans-serif;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 24px;
+    letter-spacing: 0.08px;
+}

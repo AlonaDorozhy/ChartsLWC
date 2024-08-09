@@ -1,0 +1,52 @@
+:host {
+    --blue: #1e90ff;
+    --white: #ffffff;
+    --vibrant-red: #B7312C;
+    --shadow-mountain: #595959;
+    --eerie-black: #1A1A1A;
+    --pacific-blue: #1B9FD0;
+    --main-font-family: 'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+    --chart-header-font-size: 18px;
+    --chart-header-font-weight: 400;
+    --chart-header-line-height: 24.51px;
+    --pr-dark-red: #B7312C;
+    --pr-dark-blue: #003B6A;
+    --pr-yellow: #F2A900;
+    --pr-light-red: #faeaea;
+    --pr-light-blue: #e6ebf8;
+    --pr-light-yellow: #fff6ea;
+    --neutrals-med-grey: #949494;
+    --neutrals-white: #ffffff;
+    --neutrals-dark-grey: #595959;
+    --neutrals-charcoal: #1A1A1A;
+    --font-inner-text: 14px var(--main-font-family);
+    --inner-text-color: #c91616;
+}
+
+.chart-card-line-small {
+    color: rgba(0, 53, 186, 0.15);
+    padding: 14px 19px 10px 19px;
+    border-radius: 10px;
+    border: 1px solid var(--neutrals-med-grey);
+    background: var(--neutrals-white);
+    width: 569px;
+    height: 370px;
+    flex-shrink: 0;
+    font-family: var(--main-font-family);
+    margin: 0 15px;
+    background-color: var(--neutrals-white);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-content: stretch;
+}
+
+.chart-card-line-header {
+    color: var(--neutrals-dark-grey);
+    font-size: 18px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    font-family: var(--main-font-family);
+    margin-bottom: 15px;
+}

@@ -1,4 +1,5 @@
 import { LightningElement, api, track } from 'lwc';
+import chartJs from '@salesforce/resourceUrl/chartJs';
 
 export default class GenericChart extends LightningElement {
     @api chartType = 'doughnut'; // Default chart type

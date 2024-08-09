@@ -1,25 +1,15 @@
-<!--
-  @description       : 
-  @author            : Gabriel Mihaila -- gmiha@softserveinc.vom
-  @group             : 
-  @last modified on  : 07-25-2024
-  @last modified by  : Gabriel Mihaila -- gmiha@softserveinc.vom
--->
 <template>
-    <lightning-card title="Chart" icon-name="custom:custom14">
-        <div class="slds-grid">
-            <div class="slds-m-around_medium canvas-container">
-                <canvas data-id="chartCanvas" width="400" height="400"></canvas>
-                <div class="tooltip" data-id="tooltip" style="display: none;"></div>
-            </div>
-            <div class="legend">
-                <template for:each={legendItems} for:item="item">
-                    <div key={item.label} class="legend-item" data-index={item.index}>
-                        <div class="legend-color" data-index={item.index}></div>
-                        <div class="legend-text" data-index={item.index}>{item.label} - £{item.value}</div>
-                    </div>
-                </template>
-            </div>
+    <div class="chart-container">
+        <!-- <div class="chart-header">{chartHeader}</div> -->
+        <canvas data-id="chartCanvas"></canvas>
+        <div class="chart-legend">
+            <!-- <template for:each={legendItems} for:item="item">
+                <div key={item.index} class="legend-item">
+                    <span class="legend-color"></span>
+                    <span class="legend-label">{item.label}</span>
+                    <span class="legend-value">{item.value}</span>
+                </div>
+            </template> -->
         </div>
-    </lightning-card>
+    </div>
 </template>
